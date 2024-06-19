@@ -1,0 +1,10 @@
+void gameloop();
+void handleInput();
+void process();
+void render();
+void handle_ball_collisions();
+void change_ball_position();
+void change_my_platform_pos(char);
+void check_for_loose();
+void enemy_logic();
+int calc_final_y_pos();
