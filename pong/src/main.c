@@ -1,3 +1,6 @@
+#include <stdlib.h>
+#include <time.h>
+
 #include "raylib.h"
 #include "include/constants.h"
 #include "include/pong.h"
@@ -6,14 +9,20 @@
 int ball_x = WINDOW_WIDTH / 2;
 int ball_y = WINDOW_HEIGHT / 2;
 int ball_speed_x = 5;
-int ball_speed_y = 5;
+int ball_speed_y;
 int my_platform_x_pos = 0;
 int my_platform_y_pos = WINDOW_HEIGHT / 2;
 int enemy_platform_x_pos = WINDOW_WIDTH - PLATFORM_WIDTH;
 int enemy_platform_y_pos = WINDOW_HEIGHT / 2;
+unsigned int score = 0;
 
 
 int main(int argc, char* argv[]){
+    srand(time(NULL));
+    ball_speed_y = (rand() % 20) - 10;
+    while (ball_speed_y == 0){
+        ball_speed_y = (rand() % 20) - 10;
+    }
     SetTargetFPS(TARGET_FPS);
     InitWindow(WINDOW_WIDTH, WINDOW_HEIGHT, TITLE);
     gameloop();
@@ -40,6 +49,7 @@ void handleInput(){
 }
 
 void process(){
+    speedup_ball();
     handle_ball_collisions();
     change_ball_position();
     enemy_logic();
@@ -47,6 +57,7 @@ void process(){
 }
 
 void render(){
+    DrawText("Score: ", 10, 10, 20, BLACK);
     BeginDrawing();
     ClearBackground(WHITE);
     DrawCircle(ball_x, ball_y, BALL_RADIUS, BLUE);
@@ -62,6 +73,7 @@ void handle_ball_collisions(){
         ball_speed_y *= -1;
     }
     if ((ball_x <= PLATFORM_WIDTH && (ball_y >= my_platform_y_pos && ball_y <= my_platform_y_pos + PLATFORM_HEIGHT)) || ((ball_x >= (WINDOW_WIDTH - PLATFORM_WIDTH) && (ball_y >= enemy_platform_y_pos && ball_y <= enemy_platform_y_pos + PLATFORM_HEIGHT)))){
+        score += 1;
         ball_speed_x *= -1;
     }
     return;
@@ -116,4 +128,10 @@ int calc_final_y_pos(){
         }
     }
     return y_pos;
+}
+
+void speedup_ball(){
+    if (score % 10 == 0 && score > 0){
+        ball_speed_x += 1;
+    }
 }

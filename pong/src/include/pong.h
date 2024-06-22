@@ -8,3 +8,4 @@ void change_my_platform_pos(char);
 void check_for_loose();
 void enemy_logic();
 int calc_final_y_pos();
+void speedup_ball();
