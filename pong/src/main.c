@@ -1,3 +1,4 @@
+#include <stdio.h>
 #include <stdlib.h>
 #include <time.h>
 
@@ -14,11 +15,13 @@ int my_platform_x_pos = 0;
 int my_platform_y_pos = WINDOW_HEIGHT / 2;
 int enemy_platform_x_pos = WINDOW_WIDTH - PLATFORM_WIDTH;
 int enemy_platform_y_pos = WINDOW_HEIGHT / 2;
+char* score_text;
 unsigned int score = 0;
 
 
 int main(int argc, char* argv[]){
     srand(time(NULL));
+    score_text = (char*)malloc(sizeof(char) * 64);
     ball_speed_y = (rand() % 20) - 10;
     while (ball_speed_y == 0){
         ball_speed_y = (rand() % 20) - 10;
@@ -49,7 +52,6 @@ void handleInput(){
 }
 
 void process(){
-    speedup_ball();
     handle_ball_collisions();
     change_ball_position();
     enemy_logic();
@@ -57,7 +59,8 @@ void process(){
 }
 
 void render(){
-    DrawText("Score: ", 10, 10, 20, BLACK);
+    update_score_text();
+    DrawText(score_text, 10, 10, 20, BLACK);
     BeginDrawing();
     ClearBackground(WHITE);
     DrawCircle(ball_x, ball_y, BALL_RADIUS, BLUE);
@@ -68,12 +71,17 @@ void render(){
     return;
 }
 
+void update_score_text(){
+    sprintf(score_text, "%s %d", "Score:", score);
+}
+
 void handle_ball_collisions(){
     if (ball_y <= 0 || ball_y >= WINDOW_HEIGHT){
         ball_speed_y *= -1;
     }
     if ((ball_x <= PLATFORM_WIDTH && (ball_y >= my_platform_y_pos && ball_y <= my_platform_y_pos + PLATFORM_HEIGHT)) || ((ball_x >= (WINDOW_WIDTH - PLATFORM_WIDTH) && (ball_y >= enemy_platform_y_pos && ball_y <= enemy_platform_y_pos + PLATFORM_HEIGHT)))){
         score += 1;
+        speedup_ball();
         ball_speed_x *= -1;
     }
     return;
@@ -131,7 +139,7 @@ int calc_final_y_pos(){
 }
 
 void speedup_ball(){
-    if (score % 10 == 0 && score > 0){
-        ball_speed_x += 1;
+    if (score % 10 == 0){
+        ball_speed_x += 2;
     }
 }
