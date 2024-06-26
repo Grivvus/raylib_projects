@@ -21,7 +21,7 @@ unsigned int score = 0;
 
 int main(int argc, char* argv[]){
     srand(time(NULL));
-    score_text = (char*)malloc(sizeof(char) * 64);
+    score_text = (char*)malloc(sizeof(char) * 16);
     ball_speed_y = (rand() % 20) - 10;
     while (ball_speed_y == 0){
         ball_speed_y = (rand() % 20) - 10;
@@ -140,6 +140,9 @@ int calc_final_y_pos(){
 
 void speedup_ball(){
     if (score % 10 == 0){
-        ball_speed_x += 2;
+        if (ball_speed_x > 0)
+            ball_speed_x += 2;
+        else
+            ball_speed_x -= 2;
     }
 }
