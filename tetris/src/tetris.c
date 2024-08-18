@@ -1,69 +1,9 @@
-#include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdbool.h>
 #include <time.h>
 
-#include "raylib.h"
-
-/* preprocessors defines */
-#define TARGET_FPS 60
-#define SQUARE_SIDE 40 // длина/ширина стороны квадрата в пикселях
-#define FIELD_HEIGHT 20 // высота игрового поля в квадратах
-#define FIELD_WIDTH 12 // ширина игрового поля в квадратах
-
-#define SCREEN_HEIGHT (FIELD_HEIGHT * SQUARE_SIDE)
-#define SCREEN_WIDTH (FIELD_WIDTH * SQUARE_SIDE)
-
-/* custom types */
-typedef enum {
-    EMPTY, FULL, FLY
-} state_t;
-
-typedef struct {
-    int shape_n;
-    state_t shape[4][4];
-    int x;
-    int y;
-    uint16_t angle;
-    bool is_flying;
-    Color color;
-} tetramino_t;
-
-typedef struct {
-    state_t playing_field[FIELD_HEIGHT][FIELD_WIDTH];
-    tetramino_t* flying_tetramino;
-    int score;
-} gamestate_t;
-
-typedef struct {
-    int x;
-    int y;
-} pair_t;
-
-/* functions initialization */
-void gameloop(gamestate_t* gs);
-void init_game_state();
-tetramino_t* get_new_tetramino();
-void set_tetramino_shape(tetramino_t* t, int shape);
-void update_game(gamestate_t* gs);
-void update_tetramino_pos(gamestate_t* gs);
-int check_side_collisions(gamestate_t* gs);
-bool check_bottom_collision(gamestate_t* gs);
-void reverse_generic_tetramino(gamestate_t* gs);
-void reverse_I_tetramino(gamestate_t* gs);
-bool check_I_tetramino_reversable(gamestate_t* gs);
-void reverse_L_tetramino(gamestate_t* gs);
-bool check_L_tetramino_reversable(gamestate_t* gs);
-void reverse_T_tetramino(gamestate_t* gs);
-bool check_T_tetramino_reversable(gamestate_t* gs);
-void reverse_Z_tetramino(gamestate_t* gs);
-bool check_Z_tetramino_reversable(gamestate_t* gs);
-void render(gamestate_t* gs);
-void render_tetramino(tetramino_t* t);
-void render_field(gamestate_t* gs);
-Color get_rand_color();
-
+#include "include/tetris.h"
 
 gamestate_t gamestate = {};
 
@@ -90,7 +30,10 @@ void gameloop(gamestate_t* gs){
         /*} else {*/
         /*    cnt++;*/
         /*}*/
+        DrawText(gs->score_str, 10, 10, 20, BLACK);
         update_game(gs);
+        check_full_row(gs);
+        update_field(gs);
         render(gs);
     }
 }
@@ -98,6 +41,8 @@ void gameloop(gamestate_t* gs){
 void init_game_state(){
     gamestate.score = 0;
     gamestate.flying_tetramino = NULL;
+    gamestate.score_str = (char*)malloc(sizeof(char) * 16);
+    score_to_str(gamestate.score_str, gamestate.score);
     for (int i = 0; i < FIELD_HEIGHT; i++){
         for (int j = 0; j < FIELD_WIDTH; j++){
             gamestate.playing_field[i][j] = EMPTY;
@@ -105,10 +50,14 @@ void init_game_state(){
     }
 }
 
+void score_to_str(char* text, unsigned score){
+    sprintf(text, "%s %d", "Score: ", score);
+}
+
 tetramino_t* get_new_tetramino(){
     tetramino_t* t = (tetramino_t*)malloc(sizeof(tetramino_t));
     t->is_flying = true;
-    t->x = (SCREEN_WIDTH - 4 * SQUARE_SIDE) / 3;
+    t->x = SCREEN_WIDTH / 2 - SQUARE_SIDE;
     t->y = 0;
     t->color = get_rand_color();
     t->angle = 0;
@@ -192,18 +141,14 @@ void update_tetramino_pos(gamestate_t* gs){
     tetramino_t* t = gs->flying_tetramino;
     t->y += (SQUARE_SIDE / (TARGET_FPS / 4));
 
-    if (IsKeyDown(KEY_D) && IsKeyDown(KEY_A)){
-        return;
-    }
-
-    if (IsKeyPressed(KEY_R)){
+    if (IsKeyPressed(KEY_W)){
         reverse_generic_tetramino(gs);
     }
 
-    if (IsKeyDown(KEY_D) && check_side_collisions(gs) != 1){
-        t->x += (SQUARE_SIDE / 2);
-    } else if (IsKeyDown(KEY_A) && check_side_collisions(gs) != -1){
-        t->x -= (SQUARE_SIDE / 2);
+    if (IsKeyPressed(KEY_D) && check_side_collisions(gs) != 1){
+        t->x += SQUARE_SIDE;
+    } else if (IsKeyPressed(KEY_A) && check_side_collisions(gs) != -1){
+        t->x -= SQUARE_SIDE;
     }
 }
 
@@ -234,7 +179,7 @@ bool check_bottom_collision(gamestate_t* gs){
                 int x_cell, y_cell;
                 x_cell = (gs->flying_tetramino->x / SQUARE_SIDE) + j;
                 y_cell = (gs->flying_tetramino->y / SQUARE_SIDE) + i;
-                if (y_cell + 1 >= FIELD_HEIGHT || gs->playing_field[y_cell][x_cell] == FULL){
+                if (y_cell + 1 >= FIELD_HEIGHT || gs->playing_field[y_cell + 1][x_cell] == FULL){
                     return false;
                 }
             }
@@ -426,4 +371,50 @@ Color get_rand_color(){
         case 4: return GREEN; break;
         default: return WHITE; break;
     }
+}
+
+void check_full_row(gamestate_t* gs){
+    for (int i = 0; i < FIELD_HEIGHT; i++){
+        bool is_full_row = true;
+        for (int j = 0; j < FIELD_WIDTH; j++){
+            if (gs->playing_field[i][j] != FULL){
+                is_full_row = false;
+                break;
+            }
+        }
+        if (is_full_row){
+            update_highier_squares(gs, i);
+            for (int x = 0; x < FIELD_WIDTH; x++){
+                gs->playing_field[i][x] = EMPTY;
+            }
+            gs->score += 100;
+            score_to_str(gs->score_str, gs->score);
+        }
+    }
+}
+
+void update_highier_squares(gamestate_t* gs, int row_number){
+    for (int i = 0; i < row_number; i++){
+        for (int j = 0; j < FIELD_WIDTH; j++){
+            if (gs->playing_field[i][j] == FULL){
+                gs->playing_field[i][j] = FLY;
+            }
+        }
+    }
+}
+
+void update_field(gamestate_t* gs){
+    for (int i = FIELD_HEIGHT - 1; i >= 0; i--){
+        for (int j = 0; j < FIELD_WIDTH; j++){
+            if (gs->playing_field[i][j] == FLY){
+                if (gs->playing_field[i + 1][j] != FULL){
+                    gs->playing_field[i + 1][j] = FULL;
+                    gs->playing_field[i][j]  = EMPTY;
+                } else {
+                    gs->playing_field[i][j] = FULL;
+                }
+            }
+        }
+    }
+    return;
 }
