@@ -6,3 +6,6 @@ run: build
 
 build: 
 	gcc -o ./bin/game ./src/tetris.c -lraylib
+
+clean:
+	rm -r ./bin/*

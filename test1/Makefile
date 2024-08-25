@@ -1,10 +1,10 @@
 SHELL = /bin/bash
 main: run
 
-run: build 
-	./bin/game
+run:
+	././bin/game
 
-build: 
+build:
 	gcc -o ./bin/game ./src/main.c -lraylib
 
 clean:
