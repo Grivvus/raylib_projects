@@ -6,8 +6,8 @@ int main(void){
     int win_width = 800;
     InitWindow(win_width, win_height, "main window");
 
-    Sound pop_sound = LoadSound("../resources/pop.ogg");
-    Texture2D character = LoadTexture("../resources/pacman.png");
+    Sound pop_sound = LoadSound("resources/pop.ogg");
+    Texture2D character = LoadTexture("resources/pacman.png");
     float speed_x = 0.01f;
     float speed_y = 0.01f;
     Vector2 pos = {0.0f, 0.0f};
