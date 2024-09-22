@@ -7,7 +7,7 @@
 
 gamestate_t gamestate = {};
 
-int main(int argc, char** argv){
+int main(void){
     srand(time(NULL));
     InitWindow(SCREEN_WIDTH, SCREEN_HEIGHT, "Tetris");
     SetTargetFPS(TARGET_FPS);
@@ -24,12 +24,6 @@ int main(int argc, char** argv){
 void gameloop(gamestate_t* gs){
     int cnt = 0;
     while (WindowShouldClose() == false){
-        /*if (cnt == 3){*/
-        /*    update_game(gs);*/
-        /*    cnt = 0;*/
-        /*} else {*/
-        /*    cnt++;*/
-        /*}*/
         DrawText(gs->score_str, 10, 10, 20, BLACK);
         update_game(gs);
         check_full_row(gs);
@@ -39,7 +33,6 @@ void gameloop(gamestate_t* gs){
 }
 
 void init_game_state(){
-    gamestate.score = 0;
     gamestate.flying_tetramino = NULL;
     gamestate.score_str = (char*)malloc(sizeof(char) * 16);
     score_to_str(gamestate.score_str, gamestate.score);
@@ -78,14 +71,14 @@ void set_tetramino_shape(tetramino_t* t, int shape){
 
     switch (shape) {
         case 0:
-            // квадрат
+            // cube
             t->shape[1][1] = FLY;
             t->shape[1][2] = FLY;
             t->shape[2][1] = FLY;
             t->shape[2][2] = FLY;
             break;
         case 1:
-            // палка вертикальная
+            // I
             t->shape[0][1] = FLY;
             t->shape[1][1] = FLY;
             t->shape[2][1] = FLY;
@@ -106,7 +99,7 @@ void set_tetramino_shape(tetramino_t* t, int shape){
             t->shape[2][1] = FLY;
             break;
         case 4:
-            // молния/лесенка
+            // Z
             t->shape[0][1] = FLY;
             t->shape[1][1] = FLY;
             t->shape[1][2] = FLY;
@@ -222,6 +215,37 @@ void reverse_I_tetramino(gamestate_t* gs){
 }
 
 bool check_I_tetramino_reversable(gamestate_t* gs){
+    int x_cell = (gs->flying_tetramino->x / SQUARE_SIDE);
+    int y_cell = (gs->flying_tetramino->y / SQUARE_SIDE);
+
+    if (x_cell == 0 || x_cell >= FIELD_WIDTH - 3){
+        return false;
+    }
+    
+    x_cell += 1;
+    y_cell += 1;
+    
+    if (gs->playing_field[y_cell][x_cell-1] != EMPTY){
+        return false;
+    }
+    if (gs->playing_field[y_cell+1][x_cell-1] != EMPTY){
+        return false;
+    }
+    if (gs->playing_field[y_cell+1][x_cell+1] != EMPTY){
+        return false;
+    }
+    if (gs->playing_field[y_cell+1][x_cell+2] != EMPTY){
+        return false;
+    }
+    if (gs->playing_field[y_cell+2][x_cell+1] != EMPTY){
+        return false;
+    }
+    if (gs->playing_field[y_cell+2][x_cell+2] != EMPTY){
+        return false;
+    }
+    if (gs->playing_field[y_cell+3][x_cell+1] != EMPTY){
+        return false;
+    }
     return true;
 }
 
@@ -262,6 +286,23 @@ void reverse_L_tetramino(gamestate_t* gs){
 }
 
 bool check_L_tetramino_reversable(gamestate_t* gs){
+    /*kinda greedy algo; check 1 extra cell for every rotate;*/
+    /*because i don't want check exact cells for every different angle*/
+    for (int i = 0; i < 3; i++){
+        for (int j = 0; j < 3; j++){
+            int x_cell = (gs->flying_tetramino->x / SQUARE_SIDE) + j;
+            int y_cell = (gs->flying_tetramino->y / SQUARE_SIDE) + i;
+            if (x_cell < 0 || x_cell >= FIELD_WIDTH){
+                return false;
+            }
+            if (y_cell < 0 || x_cell >= FIELD_HEIGHT){
+                return false;
+            }
+            if (gs->playing_field[y_cell][x_cell] == FULL){
+                return false;
+            }
+        }
+    }
     return true;
 }
 
@@ -300,6 +341,22 @@ void reverse_T_tetramino(gamestate_t* gs){
 }
 
 bool check_T_tetramino_reversable(gamestate_t* gs){
+    /*same algo as for L*/
+    for (int i = 0; i < 3; i++){
+        for (int j = 0; j < 3; j++){
+            int x_cell = (gs->flying_tetramino->x / SQUARE_SIDE) + j;
+            int y_cell = (gs->flying_tetramino->y / SQUARE_SIDE) + i;
+            if (x_cell < 0 || x_cell >= FIELD_WIDTH){
+                return false;
+            }
+            if (y_cell < 0 || y_cell >= FIELD_HEIGHT){
+                return false;
+            }
+            if (gs->playing_field[y_cell][x_cell] == FULL){
+                return false;
+            }
+        }
+    }
     return true;
 }
 
@@ -327,6 +384,23 @@ void reverse_Z_tetramino(gamestate_t* gs){
 }
 
 bool check_Z_tetramino_reversable(gamestate_t* gs){
+    int x_cell = (gs->flying_tetramino->x / SQUARE_SIDE);
+    int y_cell = (gs->flying_tetramino->y / SQUARE_SIDE);
+    if (gs->playing_field[y_cell][x_cell] != EMPTY){
+        return false;
+    }
+    if (gs->playing_field[y_cell+1][x_cell] != EMPTY){
+        return false;
+    }
+    if (gs->playing_field[y_cell+1][x_cell+3] != EMPTY){
+        return false;
+    }
+    if (gs->playing_field[y_cell+2][x_cell+1] != EMPTY){
+        return false;
+    }
+    if (gs->playing_field[y_cell+2][x_cell+3] != EMPTY){
+        return false;
+    }
     return true;
 }
 
